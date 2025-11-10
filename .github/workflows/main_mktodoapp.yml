@@ -1,5 +1,5 @@
 # Docs: https://github.com/Azure/webapps-deploy
-# Purpose: Build and deploy a Node.js app (frontend or fullstack) to Azure Web App
+# Purpose: Build and deploy a Node.js (frontend) app to Azure Web App
 
 name: Build and Deploy Node.js App to Azure Web App - MkToDoApp
 
@@ -28,28 +28,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # If your project uses Vite/React/Next/etc., this will create the build output in ./dist or ./build
       - name: Build project
         run: npm run build --if-present
 
-      # Optional: Run tests if present
-      - name: Run tests
-        run: npm test --if-present
-
-      # Upload only the build output (not the entire repo)
+      # Upload ONLY the built output (contents of dist/)
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
           name: node-build
-          path: |
-            dist
-            build
-            package.json
-            package-lock.json
-            server.js
-            app.js
-            index.js
-          if-no-files-found: ignore
+          path: dist/**
+          if-no-files-found: error
 
   deploy:
     runs-on: ubuntu-latest
