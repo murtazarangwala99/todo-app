@@ -31,7 +31,7 @@ jobs:
       - name: Build project
         run: npm run build --if-present
 
-      # Upload ONLY the built output (contents of dist/)
+      # ✅ Upload ONLY the files inside dist (no nested folder)
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
@@ -51,6 +51,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-build
+          path: .
+
+      # ✅ Ensure all files are placed in root (no extra 'dist' folder)
+      - name: List downloaded files (debug)
+        run: ls -la
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -59,6 +64,7 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_75E0E493D3F64D429DB96C7F31C1AD39 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_36EEE81C468A4B01BC61370F9708C8E4 }}
 
+      # ✅ Deploy only the build contents directly
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
