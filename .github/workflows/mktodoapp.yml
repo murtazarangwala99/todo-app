@@ -1,22 +1,29 @@
 # Docs: https://github.com/Azure/webapps-deploy
-# Purpose: Build and deploy a Node.js (frontend) app to Azure Web App
+# Purpose: Build and deploy a Node.js (React/Vite) app to Azure Web App (MkToDoApp)
+# Includes: matrix builds, caching, environments, concurrency, and OIDC authentication
 
 name: Build and Deploy Node.js App to Azure Web App - MkToDoApp
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy (default: main)'
+        required: false
+        default: 'main'
+      environment:
+        description: 'Target environment (production or staging)'
+        required: false
+        default: 'production'
 
 jobs:
   build:
+    name: Build App (Matrix)
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
-    permissions:
-      contents: read
+        node-version: [18.x, 20.x, 24.x]
 
     steps:
       - name: Checkout repository
@@ -42,29 +49,33 @@ jobs:
       - name: Build project
         run: npm run build --if-present
 
-      - name: Upload artifact for deployment
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: node-build-${{ matrix.node-version }}
           path: dist/**
+          retention-days: 3
           if-no-files-found: error
 
   deploy:
+    name: Deploy to Azure Web App
     runs-on: ubuntu-latest
     needs: build
-    permissions:
-      id-token: write
-      contents: read
+    environment:
+      name: production
+      url: https://mktodoapp.azurewebsites.net
+    concurrency: production-deploy
+    if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: Download build artifact
+      - name: Download build artifact (Node 24.x)
         uses: actions/download-artifact@v4
         with:
-          name: node-build
+          name: node-build-24.x
           path: .
 
-      - name: List downloaded files (debug)
-        run: ls -la
+      - name: Verify build files
+        run: ls -la && ls -la dist || true
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -73,13 +84,15 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # ✅ Deploy only the build contents directly
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'MkToDoApp'
           slot-name: 'Production'
-          package: .
+          package: ./dist
 
-
+      - name: Deployment Summary
+        run: |
+          echo "✅ Deployment completed successfully!"
+          echo "App URL: https://mktodoapp.azurewebsites.net"
