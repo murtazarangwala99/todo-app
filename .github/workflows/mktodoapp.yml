@@ -49,8 +49,15 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install dependencies
-        run: npm ci
-
+        run: npm ci --prefer-offline
+        
+      - name: Lint Code
+        run: npm run lint --if--present
+        
+      - name: Run Tests
+        run: npm test --if-present
+      
+      # Build App
       - name: Build project
         run: npm run build --if-present
 
@@ -59,7 +66,7 @@ jobs:
         with:
           name: node-build-${{ matrix.node-version }}
           path: dist/**
-          retention-days: 3
+          retention-days: 1 #Retention auto expire om 24hours
           if-no-files-found: error
 
   deploy:
@@ -94,7 +101,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'MkToDoApp'
-          slot-name: 'Production'
+          slot-name: ${{ github.event.inputs.target == 'staging' && 'Staging' || 'Production' }}
           package: .
 
       - name: Deployment Summary
@@ -102,4 +109,13 @@ jobs:
           echo "✅ Deployment completed successfully!"
           echo "Deployed using Node 24.x build"
           echo "Target: ${{ github.event.inputs.target }}"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Run ID: ${{ github.run_number }}"
+          echo "$(date) – Commit ${{ github.sha }} – Run ${{ github.run_number }}" >> deploy_history.log
           echo "App URL: https://mktodoapp.azurewebsites.net"
+          echo "✅✅✅ Deployment Finished! ✅✅✅  "
+
+      - name: Verify site availability
+        run: curl -I https://mktodoapp.azurewebsites.net | grep "200 OK"
+
