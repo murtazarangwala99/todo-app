@@ -90,7 +90,7 @@ jobs:
         with:
           app-name: 'MkToDoApp'
           slot-name: 'Production'
-          package: ./dist
+          package: .
 
       - name: Deployment Summary
         run: |
