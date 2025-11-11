@@ -64,9 +64,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    environment:
-      name: production
-      url: https://mktodoapp.azurewebsites.net
     concurrency: production-deploy
     if: github.ref == 'refs/heads/main'
 
