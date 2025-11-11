@@ -11,8 +11,8 @@ on:
         description: 'Branch to deploy (default: main)'
         required: false
         default: 'main'
-      environment:
-        description: 'Target environment (production or staging)'
+      target:
+        description: 'Target (production/staging)'
         required: false
         default: 'production'
 
@@ -58,7 +58,7 @@ jobs:
           if-no-files-found: error
 
   deploy:
-    name: Deploy to Azure Web App
+    name: Deploy
     runs-on: ubuntu-latest
     needs: build
     permissions:
