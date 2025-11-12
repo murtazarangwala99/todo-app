@@ -1,7 +1,7 @@
 # Main workflow that calls the reusable build workflow
 # Purpose: Build & Deploy Node.js (React/Vite) app to Azure Web App
 
-name: Build and Deploy Node.js App - MkToDoApp
+name: Reusable Build and Deploy 
 
 on:
   workflow_dispatch:
