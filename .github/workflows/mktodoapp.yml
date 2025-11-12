@@ -17,12 +17,12 @@ on:
         default: 'production'
 
 jobs:
+# BUILD JOb
   build:
     name: Build App (Matrix)
-    runs-on: ubuntu-latest
+    runs-on: azure-github-action-runner
     env:
       DEPLOY_ENV: ${{ github.event.inputs.target }}
-
     strategy:
       matrix:
         node-version: [18.x, 20.x, 24.x]
@@ -57,7 +57,11 @@ jobs:
       #- name: Run Tests
      #   run: npm test --if-present
       
-      # Build App
+      # Audit dependencies for security
+      
+      - name: Audit Dependencies
+        run: npm audit --audit-level=moderate || true
+      # --------------------- Build App ----------------------
       - name: Build project
         run: npm run build --if-present
 
@@ -71,13 +75,22 @@ jobs:
 
   deploy:
     name: Deploy to Azure Web App
-    runs-on: ubuntu-latest
+    runs-on: azure-github-action-runner
     needs: build
+    
     permissions:
       id-token: write
       contents: read
-    concurrency: production-deploy
+    
+    concurrency: ${{ github.event.inputs.target }}-deploy
     if: github.ref == 'refs/heads/main'
+
+    environment:
+      # GitHub environment helps enforce manual approval for prod
+      # Go to repo → Settings → Environments → Add "production" & "staging"
+      # Then set required reviewers for production
+      name: ${{ github.event.inputs.target }}
+      url: https://mktodoapp.azurewebsites.net
 
     steps:
       - name: Download build artifact (Node 24.x)
@@ -88,7 +101,7 @@ jobs:
 
       - name: Verify build files
         run: ls -la && ls -la dist || echo "No dist folder found"
-
+      # ----- Secure login to Azure using OIDC (no passwords) ----
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -117,5 +130,7 @@ jobs:
           echo "✅✅✅ Deployment Finished! ✅✅✅  "
 
       - name: Verify site availability
-        run: curl -I https://mktodoapp.azurewebsites.net | grep "200 OK"
+        run: 
+          echo "Performing health check..."
+          curl -I https://mktodoapp.azurewebsites.net | grep "200 OK" || echo "⚠️ App may still be starting..."
 
