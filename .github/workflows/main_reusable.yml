@@ -21,6 +21,7 @@ jobs:
     with:
       node-version: '24.x'
       artifact-name: 'node-build-24.x'
+    secrets: inherit
 
   # --------------------------------------------------------
   # 🚀 DEPLOY JOB
