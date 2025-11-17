@@ -7,5 +7,4 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <App />
   </StrictMode>
-  db.query("SELECT * FROM users WHERE id=" + req.query.id);
 );
